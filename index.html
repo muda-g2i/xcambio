@@ -2,19 +2,24 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Cambio VE — Bolívares y USDT</title>
-<meta name="description" content="Calculadora rápida de bolívares a USD usando la tasa BCV y la tasa P2P.">
-<meta name="theme-color" content="#145C43">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CambioX — Bolívares ⇄ USD</title>
+<meta name="description" content="Calculadora rápida de bolívares a USD con la tasa BCV y la tasa P2P.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#145C43" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1513" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Cambio VE">
-<link rel="manifest" href="/xcambio/manifest.json">
-<link rel="icon" href="/xcambio/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/xcambio/icon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-title" content="CambioX">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- Fonts are self-hosted and precached by the service worker, so start-up never waits on the network. -->
+<link rel="preload" href="fonts/space-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://ve.dolarapi.com" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -28,67 +33,63 @@
 
   <div class="tear" aria-hidden="true"></div>
 
-  <section class="value-stack" aria-label="Valores a convertir">
+  <section class="value-stack" aria-label="Montos">
 
     <div class="calc__field">
-      <div class="calc__input-wrap calc__input-wrap--static">
-        <div class="calc__input-copy">
-          <span class="calc__tag">Bolívares</span>
-          <input type="number" inputmode="decimal" id="bs-input" step="0.01" min="0" aria-label="Bolívares" autofocus />
-        </div>
-      </div>
+      <label class="calc__input-wrap" for="bs-input">
+        <span class="calc__tag">Bolívares</span>
+        <input type="text" inputmode="decimal" id="bs-input" placeholder="0,00" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      </label>
     </div>
 
     <div class="calc__field">
-      <div class="calc__input-wrap calc__input-wrap--static">
-        <div class="calc__input-copy">
-          <span class="calc__tag">USD BCV</span>
-          <input type="number" inputmode="decimal" id="bcv-usd-input" step="0.01" min="0" aria-label="USD BCV" />
-        </div>
-      </div>
+      <label class="calc__input-wrap" for="bcv-usd-input">
+        <span class="calc__tag">USD BCV</span>
+        <input type="text" inputmode="decimal" id="bcv-usd-input" placeholder="0,00" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      </label>
     </div>
 
     <div class="calc__field calc__field--result">
-      <div class="calc__input-wrap calc__input-wrap--result calc__input-wrap--static">
-        <div class="calc__input-copy">
-          <span class="calc__tag">USD P2P</span>
-          <input type="number" inputmode="decimal" id="parallel-usd-input" step="0.01" min="0" aria-label="USD paralelo / P2P" />
-        </div>
-      </div>
+      <label class="calc__input-wrap" for="parallel-usd-input">
+        <span class="calc__tag">USD P2P</span>
+        <input type="text" inputmode="decimal" id="parallel-usd-input" placeholder="0,00" autocomplete="off" spellcheck="false" enterkeyhint="done">
+      </label>
     </div>
 
   </section>
 
   <div class="tear" aria-hidden="true"></div>
 
-  <section class="rates" aria-label="Tasas de cambio">
+  <section class="rates" aria-labelledby="rates-title">
     <div class="rates__header">
-      <span>Tasa de referencia</span>
+      <h2 id="rates-title">Tasa de referencia</h2>
       <div class="rates__actions">
         <span class="refresh-status" id="refresh-status" role="status" aria-live="polite"></span>
-        <button type="button" id="refresh-rates-btn" class="refresh-btn" aria-label="Actualizar tasas">↻</button>
+        <button type="button" id="refresh-rates-btn" class="refresh-btn" aria-label="Actualizar tasas" title="Actualizar tasas">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </div>
     </div>
 
     <div class="rate-row" id="bcv-row">
       <div class="rate-row__label">
-        <span>BCV oficial</span>
-        <span class="rate-row__meta" id="bcv-meta">cargando…</span>
+        <label for="bcv-rate-input">BCV oficial</label>
+        <span class="rate-row__meta" id="bcv-meta">Cargando…</span>
       </div>
       <div class="rate-row__value">
-        <span class="rate-row__prefix">Bs.</span>
-        <input type="number" inputmode="decimal" id="bcv-rate-input" step="0.01" min="0" placeholder="0,00" />
+        <span class="rate-row__prefix" aria-hidden="true">Bs.</span>
+        <input type="text" inputmode="decimal" id="bcv-rate-input" placeholder="0,00" autocomplete="off" spellcheck="false" enterkeyhint="done" aria-describedby="bcv-meta">
       </div>
     </div>
 
     <div class="rate-row" id="parallel-row">
       <div class="rate-row__label">
-        <span>Paralelo / P2P</span>
-        <span class="rate-row__meta" id="parallel-meta">cargando…</span>
+        <label for="parallel-rate-input">Paralelo / P2P</label>
+        <span class="rate-row__meta" id="parallel-meta">Cargando…</span>
       </div>
       <div class="rate-row__value">
-        <span class="rate-row__prefix">Bs.</span>
-        <input type="number" inputmode="decimal" id="parallel-rate-input" step="0.01" min="0" placeholder="0,00" required />
+        <span class="rate-row__prefix" aria-hidden="true">Bs.</span>
+        <input type="text" inputmode="decimal" id="parallel-rate-input" placeholder="0,00" autocomplete="off" spellcheck="false" enterkeyhint="done" aria-describedby="parallel-meta">
       </div>
     </div>
   </section>
@@ -96,12 +97,12 @@
   <div class="tear" aria-hidden="true"></div>
 
   <footer class="reference" id="reference">
-    <span id="gap-text">Ingresa un valor o actualiza las tasas para ver la brecha</span>
+    <span id="gap-text">Ingresa ambas tasas para ver la brecha</span>
   </footer>
 
 </main>
 
-<p class="disclaimer">Ambas tasas toman como referencia dollarapi.com.</p>
+<p class="disclaimer">Tasas de <a href="https://dolarapi.com" target="_blank" rel="noopener">dolarapi.com</a> · puedes editarlas</p>
 
 <script src="app.js"></script>
 </body>
