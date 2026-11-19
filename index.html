@@ -59,7 +59,7 @@
   <header class="hero">
     <div class="hero__bar">
       <h1 class="brand">
-        <img class="brand__mark" src="icons/mark.svg" alt="" width="30" height="30">
+        <img class="brand__mark" src="icons/mark.svg" alt="" width="28" height="28">
         CambioX
       </h1>
       <div class="hero__actions">
@@ -73,40 +73,36 @@
     <p class="status" id="status" data-tone="idle">
       <span class="status__dot" aria-hidden="true"></span>
       <span id="status-text">Cargando tasas…</span>
+      <span class="status__source">· <a href="https://dolarapi.com" target="_blank" rel="noopener">dolarapi.com</a></span>
     </p>
 
-    <section class="rates-block" aria-labelledby="rates-title">
-      <div class="rates-head">
-        <h2 id="rates-title">Tasas <span>· Bs por dólar</span></h2>
-        <span class="gap" id="gap" hidden></span>
+    <!-- Reference strip: the rates are secondary information (still tappable to set your own). -->
+    <section class="ref" aria-label="Tasas de referencia, bolívares por dólar">
+      <div class="ref__item rate" data-field="rate:bcv">
+        <div class="ref__label">
+          <span>BCV</span>
+          <button type="button" class="rate__reset" data-reset="bcv" hidden aria-label="Tasa BCV manual. Volver a la automática"><span class="rate__reset-text">Manual</span><svg class="i"><use href="#i-reset"/></svg></button>
+        </div>
+        <div class="ref__value">
+          <button type="button" class="rate__main" data-activate="rate:bcv"><span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span></button>
+          <svg class="i ref__edit" aria-hidden="true"><use href="#i-edit"/></svg>
+        </div>
       </div>
 
-      <div class="rates">
-        <div class="rate rate--bcv" data-field="rate:bcv">
-          <div class="rate__top">
-            <span class="rate__icon rate__icon--bcv" aria-hidden="true">$</span>
-            <span class="rate__label">BCV</span>
-            <span class="rate__edit" aria-hidden="true"><svg class="i"><use href="#i-edit"/></svg></span>
-            <button type="button" class="rate__reset" data-reset="bcv" hidden aria-label="Volver a la tasa automática BCV"><svg class="i"><use href="#i-reset"/></svg></button>
-          </div>
-          <button type="button" class="rate__main" data-activate="rate:bcv">
-            <span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span>
-          </button>
-          <span class="chip" data-meta="bcv">Automática</span>
+      <div class="ref__item rate" data-field="rate:usdt">
+        <div class="ref__label">
+          <span>USDT</span>
+          <button type="button" class="rate__reset" data-reset="usdt" hidden aria-label="Tasa USDT manual. Volver a la automática"><span class="rate__reset-text">Manual</span><svg class="i"><use href="#i-reset"/></svg></button>
         </div>
+        <div class="ref__value">
+          <button type="button" class="rate__main" data-activate="rate:usdt"><span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span></button>
+          <svg class="i ref__edit" aria-hidden="true"><use href="#i-edit"/></svg>
+        </div>
+      </div>
 
-        <div class="rate rate--usdt" data-field="rate:usdt">
-          <div class="rate__top">
-            <svg class="rate__icon" aria-hidden="true"><use href="#i-tether"/></svg>
-            <span class="rate__label">USDT</span>
-            <span class="rate__edit" aria-hidden="true"><svg class="i"><use href="#i-edit"/></svg></span>
-            <button type="button" class="rate__reset" data-reset="usdt" hidden aria-label="Volver a la tasa automática USDT"><svg class="i"><use href="#i-reset"/></svg></button>
-          </div>
-          <button type="button" class="rate__main" data-activate="rate:usdt">
-            <span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span>
-          </button>
-          <span class="chip" data-meta="usdt">Automática</span>
-        </div>
+      <div class="ref__item ref__item--gap">
+        <div class="ref__label">Brecha</div>
+        <div class="ref__value" id="gap">—</div>
       </div>
 
       <div class="coach" id="rate-hint" role="note" hidden>
@@ -116,57 +112,48 @@
     </section>
   </header>
 
-  <main class="amounts" aria-label="Montos">
-    <div class="amount" data-field="bs">
-      <button type="button" class="amount__main" data-activate="bs">
-        <span class="badge" aria-hidden="true">Bs</span>
-        <span class="amount__text">
-          <span class="amount__label">Bolívares</span>
+  <main class="sheet">
+    <div class="amounts" role="group" aria-label="Montos">
+      <div class="amount" data-field="bs">
+        <button type="button" class="amount__main" data-activate="bs">
+          <span class="amount__label"><span class="cur cur--bs" aria-hidden="true">Bs</span>Bolívares</span>
           <span class="amount__value"><span class="value" data-placeholder="0,00"></span><span class="caret" aria-hidden="true"></span></span>
-        </span>
-      </button>
-      <button type="button" class="amount__action" data-action-for="bs"><svg class="i"><use href="#i-copy"/></svg></button>
+        </button>
+        <button type="button" class="amount__action" data-action-for="bs" aria-label="Copiar bolívares"><svg class="i"><use href="#i-copy"/></svg></button>
+      </div>
+
+      <div class="amount" data-field="bcv">
+        <button type="button" class="amount__main" data-activate="bcv">
+          <span class="amount__label"><span class="cur cur--bcv" aria-hidden="true">$</span>Dólares BCV</span>
+          <span class="amount__value"><span class="value" data-placeholder="0,00"></span><span class="caret" aria-hidden="true"></span></span>
+        </button>
+        <button type="button" class="amount__action" data-action-for="bcv" aria-label="Copiar dólares BCV"><svg class="i"><use href="#i-copy"/></svg></button>
+      </div>
+
+      <div class="amount" data-field="usdt">
+        <button type="button" class="amount__main" data-activate="usdt">
+          <span class="amount__label"><svg class="cur" aria-hidden="true"><use href="#i-tether"/></svg>USDT</span>
+          <span class="amount__value"><span class="value" data-placeholder="0,00"></span><span class="caret" aria-hidden="true"></span></span>
+        </button>
+        <button type="button" class="amount__action" data-action-for="usdt" aria-label="Copiar USDT"><svg class="i"><use href="#i-copy"/></svg></button>
+      </div>
     </div>
 
-    <div class="amount" data-field="bcv">
-      <button type="button" class="amount__main" data-activate="bcv">
-        <span class="badge badge--bcv" aria-hidden="true">$</span>
-        <span class="amount__text">
-          <span class="amount__label">Dólares <b>BCV</b></span>
-          <span class="amount__value"><span class="value" data-placeholder="0,00"></span><span class="caret" aria-hidden="true"></span></span>
-        </span>
-      </button>
-      <button type="button" class="amount__action" data-action-for="bcv"><svg class="i"><use href="#i-copy"/></svg></button>
+    <div class="keypad" role="group" aria-label="Teclado numérico">
+      <button type="button" class="key" data-key="7">7</button>
+      <button type="button" class="key" data-key="8">8</button>
+      <button type="button" class="key" data-key="9">9</button>
+      <button type="button" class="key" data-key="4">4</button>
+      <button type="button" class="key" data-key="5">5</button>
+      <button type="button" class="key" data-key="6">6</button>
+      <button type="button" class="key" data-key="1">1</button>
+      <button type="button" class="key" data-key="2">2</button>
+      <button type="button" class="key" data-key="3">3</button>
+      <button type="button" class="key" data-key="," aria-label="Coma decimal">,</button>
+      <button type="button" class="key" data-key="0">0</button>
+      <button type="button" class="key" data-key="back" aria-label="Borrar (mantén para borrar todo)"><svg class="i"><use href="#i-back"/></svg></button>
     </div>
-
-    <div class="amount" data-field="usdt">
-      <button type="button" class="amount__main" data-activate="usdt">
-        <span class="badge badge--usdt" aria-hidden="true"><svg><use href="#i-tether"/></svg></span>
-        <span class="amount__text">
-          <span class="amount__label"><b>USDT</b></span>
-          <span class="amount__value"><span class="value" data-placeholder="0,00"></span><span class="caret" aria-hidden="true"></span></span>
-        </span>
-      </button>
-      <button type="button" class="amount__action" data-action-for="usdt"><svg class="i"><use href="#i-copy"/></svg></button>
-    </div>
-
-    <p class="hint" id="hint">Toca un monto o una tasa y escribe. Fuente: <a href="https://dolarapi.com" target="_blank" rel="noopener">dolarapi.com</a></p>
   </main>
-
-  <div class="keypad" role="group" aria-label="Teclado numérico">
-    <button type="button" class="key" data-key="7">7</button>
-    <button type="button" class="key" data-key="8">8</button>
-    <button type="button" class="key" data-key="9">9</button>
-    <button type="button" class="key" data-key="4">4</button>
-    <button type="button" class="key" data-key="5">5</button>
-    <button type="button" class="key" data-key="6">6</button>
-    <button type="button" class="key" data-key="1">1</button>
-    <button type="button" class="key" data-key="2">2</button>
-    <button type="button" class="key" data-key="3">3</button>
-    <button type="button" class="key key--alt" data-key="," aria-label="Coma decimal">,</button>
-    <button type="button" class="key" data-key="0">0</button>
-    <button type="button" class="key key--alt" data-key="back" aria-label="Borrar (mantén para borrar todo)"><svg class="i"><use href="#i-back"/></svg></button>
-  </div>
 
 </div>
 

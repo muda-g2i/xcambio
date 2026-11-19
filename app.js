@@ -262,18 +262,33 @@ function renderAmounts(values) {
     node.classList.toggle("is-active", active);
     node.classList.toggle("is-fresh", active && state.entry === null);
     node.querySelector(".value").textContent = text;
-    node.querySelector(".amount__value").dataset.len = text.length > 14 ? "xlong" : text.length > 11 ? "long" : "";
 
     const main = node.querySelector(".amount__main");
     main.setAttribute("aria-label", `${LABELS[key]}: ${text || "vacío"}`);
     main.toggleAttribute("aria-current", active);
 
-    const action = node.querySelector(".amount__action");
-    const clears = active && text !== "";
-    setIcon(action, clears ? "#i-clear" : "#i-copy");
-    action.dataset.mode = clears ? "clear" : "copy";
-    action.setAttribute("aria-label", `${clears ? "Borrar" : "Copiar"} ${LABELS[key].toLowerCase()}`);
-    action.disabled = text === "";
+    // Only the selected row shows its copy button (CSS); it's disabled while empty.
+    node.querySelector(".amount__action").disabled = text === "";
+  }
+  fitAmounts();
+}
+
+/**
+ * Shrink an amount's font until it fits its row (34 px down to 18 px).
+ * Measured, not guessed from the character count, so it works for any width.
+ */
+function fitAmounts() {
+  for (const key of AMOUNT_KEYS) {
+    const box = ui.fields[key].querySelector(".amount__value");
+    box.style.fontSize = "";
+    const value = box.querySelector(".value");
+    const caret = box.querySelector(".caret");
+    let size = parseFloat(getComputedStyle(box).fontSize);
+    const fits = () => value.getBoundingClientRect().width + caret.getBoundingClientRect().width + 8 <= box.clientWidth;
+    while (size > 18 && !fits()) {
+      size -= 2;
+      box.style.fontSize = `${size}px`;
+    }
   }
 }
 
@@ -290,30 +305,32 @@ function renderRates() {
     node.classList.toggle("is-manual", manual);
     node.querySelector(".value").textContent = text;
 
+    // Rates are reference information: the source/date goes in the accessible name and tooltip,
+    // not on screen. The "Manual ↺" pill shows when a rate was typed by hand.
+    let source;
+    if (manual) source = "manual";
+    else if (state.api[key]) {
+      const when = describeDate(state.api[key].date);
+      source = when ? `automática, ${when}` : "automática";
+    } else source = state.sync === "error" ? "sin datos, toca para escribirla" : "cargando";
+
     const main = node.querySelector(".rate__main");
-    const mode = manual ? "manual" : "automática";
-    main.setAttribute("aria-label", `${LABELS[field]}, ${mode}: ${text ? `${text} bolívares por dólar` : "sin tasa"}. Toca para editar`);
+    main.setAttribute("aria-label", `${LABELS[field]} (${source}): ${text ? `${text} bolívares por dólar` : "sin tasa"}. Toca para editar`);
     main.toggleAttribute("aria-current", active);
+    node.title = `${LABELS[field]} · ${source}`;
 
     node.querySelector(".rate__reset").hidden = !(manual && state.api[key]);
-
-    // The chip states where the rate comes from, which also signals it can be changed.
-    let chip;
-    if (manual) chip = "Manual";
-    else if (active) chip = "Escribe tu tasa";
-    else if (state.api[key]) {
-      const when = describeDate(state.api[key].date).replace(/^hoy (?=\d)/, "");
-      chip = when ? `Automática · ${when}` : "Automática";
-    } else chip = state.sync === "error" ? "Escríbela" : "Cargando…";
-    node.querySelector(".chip").textContent = chip;
   }
 
+  // The gap between the two rates is always visible.
   const gap = computeGap(state.rates);
-  ui.gap.hidden = !Number.isFinite(gap);
   if (Number.isFinite(gap)) {
     const pct = formatNumber(Math.abs(gap), 1, 1);
-    ui.gap.textContent = `Brecha ${gap >= 0 ? "+" : "−"}${pct}%`;
+    ui.gap.textContent = `${gap >= 0 ? "+" : "−"}${pct}%`;
     ui.gap.title = `USDT ${pct}% ${gap >= 0 ? "sobre" : "bajo"} el BCV`;
+  } else {
+    ui.gap.textContent = "—";
+    ui.gap.title = "";
   }
 }
 
@@ -389,13 +406,6 @@ document.addEventListener("click", (e) => {
   const action = e.target.closest("[data-action-for]");
   if (action) {
     const key = action.dataset.actionFor;
-    if (action.dataset.mode === "clear") {
-      state.entry = "";
-      commit(key);
-      render();
-      announceSoon();
-      return;
-    }
     const value = currentValues()[key];
     // Copied without thousands separators ("1234,56") so it pastes cleanly into bank apps.
     if (Number.isFinite(value)) copyText(entryFromNumber(value, 2), `Copiado: ${formatNumber(value)}`);
@@ -516,6 +526,10 @@ ui.install.addEventListener("click", async () => {
 window.addEventListener("appinstalled", () => {
   ui.install.hidden = true;
 });
+
+// Amount sizes depend on the font and the width: re-fit when either changes.
+document.fonts?.ready.then(fitAmounts);
+window.addEventListener("resize", fitAmounts);
 
 // Keep rates fresh: installed apps are resumed far more often than reopened.
 const refreshIfOlderThan = (ms) => {

@@ -87,27 +87,52 @@ Migrations in `loadSaved()`: the first version's keys `cambio-ve:bcv-rate` / `ca
 (moved, then deleted) and the old `p2p` key (now `usdt`). If you change a stored shape, migrate it there;
 installed users carry old data.
 
-## Design system
+## UI criteria (agreed with the owner, keep them)
 
-- Palette A: emerald brand (`--brand #059669`, header `#047857 → #065F46`) on a mint-tinted neutral
-  (`--bg #EDF5F0`). **BCV is marked in blue** (`--bcv`: "$" in a blue circle on the rate card, blue badge).
-  **USDT uses the Tether mark** (teal `#26A17B` circle with ₮, sprite symbol `#i-tether`) on the rate card
-  and as its amount badge. Every other color is a token in `:root` with a dark override; don't
-  hard-code colors in rules.
+Layout "A": an emerald header (brand, buttons, status, reference strip) over a white sheet that holds
+the three amounts and the keypad.
+
+1. **The three amounts are the focus.** Bolívares, Dólares BCV and USDT get the largest type (34 px, shrunk
+   only to fit) and the most space (84 px rows, 72/60 px on short screens). Never shrink them to make room
+   for something else.
+2. **Rates are reference information.** BCV and USDT sit in one quiet strip in the header (18 px values).
+   They can still be tapped to type your own rate: a faint ✎ hints it, and a "Manual ↺" pill shows a
+   manual rate and resets it. Their source/date goes in the accessible name and tooltip, not on screen.
+3. **The brecha (gap between USDT and BCV) is always visible**, next to the rates in the strip.
+4. **Emerald is the brand accent**: the header and the active field (soft emerald band, label, caret).
+   Content lives on a neutral white sheet (near-black in dark mode). BCV is marked with a blue "$",
+   USDT with the Tether mark (`#i-tether`, teal `#26A17B`); no other accent colors.
+5. **One scale, no ad-hoc values.** Spacing 4/8/12/16/20/24/32 px (20 px side margin), type
+   12/15/18/20/28/34 px (caption, label, rate, brand, key, amount), radius 8/16/28 px + pills.
+   The scales are listed at the top of `style.css`.
+6. **No boxes unless they group something.** Amounts are a list with hairline dividers; the keypad has no
+   key backgrounds, only a soft highlight when pressed. No drop shadows inside the sheet.
+7. **Header buttons stay visible**: install (when the browser offers it), theme, share, refresh. No
+   overflow (⋯) menu.
+8. **Amounts are right-aligned** so digits line up by place value (like a calculator or a bank statement).
+9. **One action at a time**: only the selected amount shows its copy button.
+10. **Touch targets ≥ 44 px**; keys 64 px tall (52 px min, 48 px on very short screens).
+11. **Dark mode mirrors light mode** exactly; only tokens change.
+12. Everything fits on one screen without scrolling from 320×568 (iPhone SE in Safari) upwards.
+
+## Design implementation
+
+- Colors are tokens in `:root` with overrides in `:root[data-theme="dark"]`; don't hard-code colors in
+  rules (the Tether and BCV marks are the only fixed colors).
 - **Light/dark theme** is driven by `data-theme="light|dark"` on `<html>`, never by
-  `@media (prefers-color-scheme)` in CSS. Dark tokens live in `:root[data-theme="dark"]`; component tweaks
-  use `[data-theme="dark"] .selector`. An inline script in `<head>` sets the attribute (and the
+  `@media (prefers-color-scheme)` in CSS. An inline script in `<head>` sets the attribute (and the
   `theme-color` metas) before the first paint from `cambiox:theme`, falling back to the system setting.
   It mirrors `resolveTheme()` in `core.js`; keep the two in sync. The header button cycles
   automatic → opposite of the system → same as the system → automatic (`nextTheme()`), so the first tap
   always changes what you see; while automatic, the app follows system changes live.
-- Editable things are boxed (rate cards and amount cards share the same field look). Rate cards show ✎
-  when automatic, ↺ when manual, and a chip: "Automática · hoy" / "Manual" / "Escribe tu tasa".
-- The active field gets an emerald ring and a caret; a just-selected value gets a selection highlight.
+- The active field gets the emerald treatment and a caret; a just-selected value gets a selection
+  highlight (the next key replaces it). In the strip the highlight only grows sideways.
+- Long amounts: `fitAmounts()` in `app.js` measures each value and steps the font down from 34 px until it
+  fits; it re-runs on resize and when fonts load. Don't replace it with character-count guesses.
 - Fonts: Space Grotesk for numbers and headings, Inter for UI text. Don't use `font-variant-numeric:
   tabular-nums`: Space Grotesk's tabular "1" has a slab foot that looks wrong.
-- Layout: header with rates, three amount cards overlapping it, keypad pinned to the bottom (thumb zone).
-  Two compact breakpoints (`max-height: 700px`, `max-height: 620px`) keep everything on one screen.
+- Breakpoints: `max-height: 760px` and `max-height: 620px` (shorter rows and keys), `max-width: 360px`
+  (narrow phones: smaller strip, slimmer header buttons). Desktop shows the app as a centred card.
 - iOS: the status bar is `black-translucent`, so the emerald header sits under it; keep the header
   dark enough for white status-bar text, and respect `env(safe-area-inset-*)`.
 - Contrast: aim for WCAG AA (4.5:1) on text. White on the header top `#047857` is 5.5:1.

@@ -3,7 +3,8 @@
 Convert bolívares, BCV dollars and USDT instantly. A static PWA (HTML + CSS + ES modules, no build step)
 hosted on GitHub Pages that works offline once opened. The app's interface is in Spanish.
 
-> Working on this repo with an AI agent? Read [AGENTS.md](AGENTS.md) first.
+> Working on this repo with an AI agent? Read [AGENTS.md](AGENTS.md) first. It also lists the agreed
+> UI criteria that any design change should respect.
 
 ## How it works
 
@@ -12,8 +13,8 @@ hosted on GitHub Pages that works offline once opened. The app's interface is in
 - Rates come from one request to [dolarapi.com](https://dolarapi.com):
   `GET https://ve.dolarapi.com/v1/dolares` returns the official BCV rate (`oficial`) and the market rate
   (`paralelo`, shown as **USDT**). Rates are rounded to two decimals and used that way everywhere.
-- Tap a rate card to type your own rate ("Manual"); ↺ on the card, or the refresh button, goes back to the
-  automatic rate.
+- The rates and the gap between them (brecha) are shown as a reference strip in the header. Tap a rate to
+  type your own ("Manual ↺"); tapping that pill, or the refresh button, goes back to the automatic rate.
 - An on-screen keypad edits whichever field is selected; on desktop you can type, paste and use the arrow keys.
 - Light and dark themes follow the phone's setting; the theme button in the header overrides it
   (automatic → light/dark → automatic).
