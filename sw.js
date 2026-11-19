@@ -12,9 +12,11 @@ const APP_SHELL = [
   'core.js',
   'app.js',
   'manifest.json',
-  'favicon.svg',
-  'icon-192.png',
-  'apple-touch-icon.png',
+  'icons/favicon.svg',
+  'icons/favicon-48.png',
+  'icons/mark.svg',
+  'icons/icon-192.png',
+  'icons/apple-touch-icon.png',
   'fonts/space-grotesk-latin-wght-normal.woff2',
   'fonts/inter-latin-wght-normal.woff2'
 ];

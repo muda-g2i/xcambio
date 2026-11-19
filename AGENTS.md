@@ -27,7 +27,9 @@ caching, and how to run, test and deploy it. This file covers the rules and cont
 | `core.test.js` | Unit tests (`node:test`) for `core.js`. |
 | `manifest.json` | PWA manifest (icons, screenshot, colors). |
 | `fonts/` | Space Grotesk (numbers, headings) and Inter (UI), latin subset, variable weight, OFL. |
-| `icon.svg`, `favicon.svg`, `*.png`, `screenshots/` | App icons and the install-dialog screenshot. |
+| `icons/` | App icon (SVG sources + PNGs), header mark, browser-tab icon. See Icons. |
+| `scripts/` | Dev-only icon tooling (`build-icons.js`, `text-to-path.py`). Not used by the app. |
+| `screenshots/` | Screenshot shown in Chrome's install dialog (`manifest.json`). |
 
 ## Domain model
 
@@ -87,8 +89,9 @@ installed users carry old data.
 ## Design system
 
 - Palette A: emerald brand (`--brand #059669`, header `#047857 → #065F46`) on a mint-tinted neutral
-  (`--bg #EDF5F0`). Semantic colors: **BCV = blue** (`--bcv`), **USDT = amber** (`--usdt`) in rate dots,
-  amount badges and active badges. Every color is a token in `:root` with a dark-mode override; don't
+  (`--bg #EDF5F0`). **BCV is marked in blue** (`--bcv`: "$" in a blue circle on the rate card, blue badge).
+  **USDT uses the Tether mark** (teal `#26A17B` circle with ₮, sprite symbol `#i-tether`) on the rate card
+  and as its amount badge. Every other color is a token in `:root` with a dark-mode override; don't
   hard-code colors in rules.
 - Editable things are boxed (rate cards and amount cards share the same field look). Rate cards show ✎
   when automatic, ↺ when manual, and a chip: "Automática · hoy" / "Manual" / "Escribe tu tasa".
@@ -103,16 +106,27 @@ installed users carry old data.
 
 ## Icons
 
-The app icon is being redesigned around an "exchange" symbol (options were presented to the owner;
-until one is chosen, the old icons stay). PNGs are rendered from SVG with Playwright, then compressed with
-Pillow:
+- **App icon** (home screen, install dialog, splash): "Bs ⟳ $", the letters Bs and $ with two curved
+  exchange arrows, white on an emerald gradient (`#10B981 → #047857`). No app name inside the icon; the home
+  screen already prints it underneath.
+- **Header mark** (`icons/mark.svg`): the same artwork in emerald on a white tile, so it stands out on the
+  emerald header.
+- **Browser-tab icon** (`icons/favicon.svg`, `icons/favicon-48.png`): deliberately simpler, a green tile with
+  a big white X, because the letters are unreadable at 16 px.
+- Letters are **outlined paths** (Space Grotesk Bold, via `scripts/text-to-path.py`), so the SVGs never
+  depend on installed fonts. To change them, regenerate the paths and paste them into the SVGs.
+- Sources and outputs in `icons/`:
 
-- `icon-192.png`, `icon-512.png`: purpose `any`, may have transparent rounded corners.
-- `icon-maskable-512.png`: full-bleed square, artwork inside the central 80% (Android masks it).
-- `apple-touch-icon.png` (180×180): full-bleed, **no transparency** (iOS fills it with black) and no rounded
-  corners (iOS rounds it).
-- `favicon.svg`: a simplified version that stays legible at 16 px. Don't put text inside the app icon; the
-  home screen already shows the name under it.
+  | Source | Output | Rules |
+  | --- | --- | --- |
+  | `icon.svg` | `icon-192.png`, `icon-512.png` | purpose `any`; transparent rounded corners are fine |
+  | `icon-maskable.svg` | `icon-maskable-512.png` | full-bleed square, artwork inside the central 80% (Android masks it) |
+  | `apple-touch-icon.svg` | `apple-touch-icon.png` (180×180) | full-bleed, **no transparency** (iOS fills it with black), no rounded corners (iOS rounds it) |
+  | `favicon.svg` | `favicon-48.png` | PNG fallback for browsers without SVG favicons |
+
+- Regenerate the PNGs with `node scripts/build-icons.js` (needs Playwright + Chromium), then shrink them
+  (e.g. Pillow `optimize=True`, or `oxipng`). If a file name changes, update `index.html`, `manifest.json`
+  and `APP_SHELL` in `sw.js`.
 
 ## Checks before you push
 

@@ -16,7 +16,7 @@
 
 /* ---------------------------------------------------------------- tokens
    Palette A: emerald brand on a mint-tinted neutral base.
-   Semantic colours: BCV = blue (official), USDT = amber (market). */
+   BCV is marked in blue; USDT uses the Tether mark (its own teal, #26A17B). */
 
 :root {
   color-scheme: light dark;
@@ -36,8 +36,6 @@
 
   --bcv: #2563EB;
   --bcv-soft: #E3ECFD;
-  --usdt: #B45309;
-  --usdt-soft: #FDF0DC;
 
   --hero-top: #047857;
   --hero-bottom: #065F46;
@@ -88,8 +86,6 @@
 
     --bcv: #8DB2FF;
     --bcv-soft: #16223F;
-    --usdt: #FBBF24;
-    --usdt-soft: #33250C;
 
     --hero-top: #065F46;
     --hero-bottom: #053D2F;
@@ -243,13 +239,12 @@ a { color: inherit; }
   letter-spacing: -0.01em;
 }
 
-.brand__mark { width: 30px; height: 30px; }
-.brand__mark rect { fill: var(--hero-ink); }
-.brand__mark path {
-  fill: none;
-  stroke: var(--hero-top);
-  stroke-width: 3.4;
-  stroke-linecap: round;
+.brand__mark {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 }
 
 .hero__actions { display: flex; gap: 2px; margin-right: -8px; }
@@ -364,15 +359,23 @@ a { color: inherit; }
   min-height: 26px;
 }
 
-.rate__dot {
-  width: 8px;
-  height: 8px;
+.rate__icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.rate--bcv .rate__dot { background: var(--bcv); }
-.rate--usdt .rate__dot { background: var(--usdt); }
+.rate__icon--bcv {
+  background: var(--bcv);
+  color: #FFFFFF;
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+}
 
 .rate__label {
   font-size: 12.5px;
@@ -564,13 +567,14 @@ a { color: inherit; }
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.badge .i { width: 22px; height: 22px; stroke-width: 2.4; }
 .badge--bcv { color: var(--bcv); background: var(--bcv-soft); }
-.badge--usdt { color: var(--usdt); background: var(--usdt-soft); }
+/* USDT uses the Tether mark itself (its own teal), so the badge is just the logo. */
+.badge--usdt { background: none; }
+.badge--usdt svg { width: 100%; height: 100%; }
 
 .amount.is-active .badge { color: #FFFFFF; background: var(--brand); }
 .amount.is-active .badge--bcv { background: var(--bcv); }
-.amount.is-active .badge--usdt { background: var(--usdt); }
+.amount.is-active .badge--usdt { background: none; }
 
 @media (prefers-color-scheme: dark) {
   .amount.is-active .badge { color: var(--surface); }
@@ -767,7 +771,6 @@ a { color: inherit; }
   .amount__value[data-len="long"] { font-size: 21px; }
   .amount__value[data-len="xlong"] { font-size: 18px; }
   .badge { width: 32px; height: 32px; border-radius: 10px; font-size: 13px; }
-  .badge .i { width: 18px; height: 18px; }
   .keypad { gap: 6px; padding-top: 6px; }
   .key { height: 43px; border-radius: 14px; font-size: 22px; }
 }
