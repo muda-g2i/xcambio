@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>CambioX — Bolívares ⇄ Dólares</title>
-<meta name="description" content="Convierte bolívares y dólares al instante con la tasa BCV y la tasa P2P. Funciona sin conexión.">
+<title>CambioX — Bolívares, dólares y USDT</title>
+<meta name="description" content="Convierte bolívares, dólares BCV y USDT al instante. Funciona sin conexión.">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#145C43" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0F2A20" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#047857" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#065F46" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -34,7 +34,9 @@
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></symbol>
   <symbol id="i-clear" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17"/></symbol>
   <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.34-5.66M4 4v5h5"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4"/></symbol>
   <symbol id="i-back" viewBox="0 0 24 24"><path d="M9 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7 6-7ZM12 9.5l5 5M17 9.5l-5 5"/></symbol>
+  <symbol id="i-usdt" viewBox="0 0 24 24"><path d="M6 6h12M12 6v13M7.5 11c1.2.8 2.7 1.2 4.5 1.2s3.3-.4 4.5-1.2"/></symbol>
 </svg>
 
 <div class="app">
@@ -57,30 +59,45 @@
       <span id="status-text">Cargando tasas…</span>
     </p>
 
-    <div class="rates" role="group" aria-label="Tasas de cambio (bolívares por dólar)">
-      <div class="rate" data-field="rate:bcv">
-        <div class="rate__top">
-          <span class="rate__label">BCV</span>
-          <button type="button" class="rate__reset" data-reset="bcv" hidden aria-label="Volver a la tasa BCV del día"><svg class="i"><use href="#i-reset"/></svg></button>
-        </div>
-        <button type="button" class="rate__main" data-activate="rate:bcv">
-          <span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span>
-        </button>
-        <span class="rate__meta" data-meta="bcv">Oficial</span>
+    <section class="rates-block" aria-labelledby="rates-title">
+      <div class="rates-head">
+        <h2 id="rates-title">Tasas <span>· Bs por dólar</span></h2>
+        <span class="gap" id="gap" hidden></span>
       </div>
 
-      <div class="rate" data-field="rate:p2p">
-        <div class="rate__top">
-          <span class="rate__label">P2P</span>
-          <span class="gap" id="gap" hidden></span>
-          <button type="button" class="rate__reset" data-reset="p2p" hidden aria-label="Volver a la tasa P2P del día"><svg class="i"><use href="#i-reset"/></svg></button>
+      <div class="rates">
+        <div class="rate rate--bcv" data-field="rate:bcv">
+          <div class="rate__top">
+            <span class="rate__dot" aria-hidden="true"></span>
+            <span class="rate__label">BCV</span>
+            <span class="rate__edit" aria-hidden="true"><svg class="i"><use href="#i-edit"/></svg></span>
+            <button type="button" class="rate__reset" data-reset="bcv" hidden aria-label="Volver a la tasa automática BCV"><svg class="i"><use href="#i-reset"/></svg></button>
+          </div>
+          <button type="button" class="rate__main" data-activate="rate:bcv">
+            <span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span>
+          </button>
+          <span class="chip" data-meta="bcv">Automática</span>
         </div>
-        <button type="button" class="rate__main" data-activate="rate:p2p">
-          <span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span>
-        </button>
-        <span class="rate__meta" data-meta="p2p">Paralelo</span>
+
+        <div class="rate rate--usdt" data-field="rate:usdt">
+          <div class="rate__top">
+            <span class="rate__dot" aria-hidden="true"></span>
+            <span class="rate__label">USDT</span>
+            <span class="rate__edit" aria-hidden="true"><svg class="i"><use href="#i-edit"/></svg></span>
+            <button type="button" class="rate__reset" data-reset="usdt" hidden aria-label="Volver a la tasa automática USDT"><svg class="i"><use href="#i-reset"/></svg></button>
+          </div>
+          <button type="button" class="rate__main" data-activate="rate:usdt">
+            <span class="value" data-placeholder="—"></span><span class="caret" aria-hidden="true"></span>
+          </button>
+          <span class="chip" data-meta="usdt">Automática</span>
+        </div>
       </div>
-    </div>
+
+      <div class="coach" id="rate-hint" role="note" hidden>
+        <span>Toca una tasa para usar la tuya</span>
+        <button type="button" class="coach__close" aria-label="Entendido"><svg class="i"><use href="#i-clear"/></svg></button>
+      </div>
+    </section>
   </header>
 
   <main class="amounts" aria-label="Montos">
@@ -97,7 +114,7 @@
 
     <div class="amount" data-field="bcv">
       <button type="button" class="amount__main" data-activate="bcv">
-        <span class="badge" aria-hidden="true">$</span>
+        <span class="badge badge--bcv" aria-hidden="true">$</span>
         <span class="amount__text">
           <span class="amount__label">Dólares <b>BCV</b></span>
           <span class="amount__value"><span class="value" data-placeholder="0,00"></span><span class="caret" aria-hidden="true"></span></span>
@@ -106,15 +123,15 @@
       <button type="button" class="amount__action" data-action-for="bcv"><svg class="i"><use href="#i-copy"/></svg></button>
     </div>
 
-    <div class="amount" data-field="p2p">
-      <button type="button" class="amount__main" data-activate="p2p">
-        <span class="badge badge--p2p" aria-hidden="true">$</span>
+    <div class="amount" data-field="usdt">
+      <button type="button" class="amount__main" data-activate="usdt">
+        <span class="badge badge--usdt" aria-hidden="true"><svg class="i"><use href="#i-usdt"/></svg></span>
         <span class="amount__text">
-          <span class="amount__label">Dólares <b>P2P</b></span>
+          <span class="amount__label"><b>USDT</b></span>
           <span class="amount__value"><span class="value" data-placeholder="0,00"></span><span class="caret" aria-hidden="true"></span></span>
         </span>
       </button>
-      <button type="button" class="amount__action" data-action-for="p2p"><svg class="i"><use href="#i-copy"/></svg></button>
+      <button type="button" class="amount__action" data-action-for="usdt"><svg class="i"><use href="#i-copy"/></svg></button>
     </div>
 
     <p class="hint" id="hint">Toca un monto o una tasa y escribe. Fuente: <a href="https://dolarapi.com" target="_blank" rel="noopener">dolarapi.com</a></p>

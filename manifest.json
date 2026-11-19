@@ -2,15 +2,15 @@
   "id": "./",
   "name": "CambioX",
   "short_name": "CambioX",
-  "description": "Convierte bolívares y dólares al instante con la tasa BCV y la tasa P2P. Funciona sin conexión.",
+  "description": "Convierte bolívares, dólares BCV y USDT al instante. Funciona sin conexión.",
   "lang": "es",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ECEFE7",
-  "theme_color": "#145C43",
+  "background_color": "#EDF5F0",
+  "theme_color": "#047857",
   "categories": [
     "finance",
     "utilities"
@@ -50,7 +50,7 @@
       "sizes": "780x1688",
       "type": "image/webp",
       "form_factor": "narrow",
-      "label": "Convierte bolívares a dólares BCV y P2P"
+      "label": "Convierte bolívares a dólares BCV y USDT"
     }
   ]
 }

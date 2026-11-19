@@ -2,23 +2,26 @@
 import {
   AMOUNT_KEYS, RATE_KEYS, LIMITS, isValidRate, parseAmount, formatNumber, applyKey,
   formatEntry, entryFromNumber, convertAll, computeGap, parseRatesResponse,
-  describeDate, timeAgo, shareText
+  describeDate, timeAgo, shareText, roundRate
 } from "./core.js";
 
 // One request returns both rates (BCV "oficial" and "paralelo").
 const RATES_URL = "https://ve.dolarapi.com/v1/dolares";
 const RATES_KEY = "cambiox:rates";
 const AMOUNT_KEY = "cambiox:amount";
-const LEGACY_KEYS = { bcv: "cambio-ve:bcv-rate", p2p: "cambio-ve:parallel-rate" };
+const HINT_KEY = "cambiox:hint-rates-seen";
+// Keys used by the first version of the app (migrated once, then removed).
+const LEGACY_KEYS = { bcv: "cambio-ve:bcv-rate", usdt: "cambio-ve:parallel-rate" };
 
 const FETCH_TIMEOUT_MS = 8000;
 const POLL_EVERY_MS = 10 * 60 * 1000; // while the app is open
 const RESUME_AFTER_MS = 5 * 60 * 1000; // when it comes back to the foreground
 const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
 
-const LABELS = { bs: "Bolívares", bcv: "Dólares BCV", p2p: "Dólares P2P", "rate:bcv": "Tasa BCV", "rate:p2p": "Tasa P2P" };
-const SOURCE = { bcv: "Oficial", p2p: "Paralelo" };
-const FIELD_ORDER = ["rate:bcv", "rate:p2p", "bs", "bcv", "p2p"];
+// User-facing copy is Spanish.
+const LABELS = { bs: "Bolívares", bcv: "Dólares BCV", usdt: "USDT", "rate:bcv": "Tasa BCV", "rate:usdt": "Tasa USDT" };
+const RATE_NAMES = { bcv: "BCV", usdt: "USDT" };
+const FIELD_ORDER = ["rate:bcv", "rate:usdt", "bs", "bcv", "usdt"];
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -30,6 +33,7 @@ const ui = {
   share: $("#share-btn"),
   install: $("#install-btn"),
   gap: $("#gap"),
+  hint: $("#rate-hint"),
   keypad: $(".keypad"),
   toast: $("#toast"),
   sr: $("#sr-summary"),
@@ -41,9 +45,9 @@ const state = {
   entry: null, // raw text typed into the active field; null = value "selected", next key replaces it
   anchor: "bs", // amount the person typed last; it is never recalculated
   anchorValue: NaN,
-  rates: { bcv: NaN, p2p: NaN }, // rates in use (from the API or typed by hand)
-  api: { bcv: null, p2p: null }, // last { rate, date } from the API
-  manual: { bcv: false, p2p: false },
+  rates: { bcv: NaN, usdt: NaN }, // rates in use (from the API or typed by hand), 2 decimals
+  api: { bcv: null, usdt: null }, // last { rate, date } from the API
+  manual: { bcv: false, usdt: false },
   fetchedAt: 0,
   sync: "idle", // "loading" | "ok" | "error"
   inflight: null,
@@ -77,7 +81,7 @@ function migrateLegacyRates() {
     }
     store.remove(LEGACY_KEYS[key]);
   }
-  if (!saved.bcv && !saved.p2p) return null;
+  if (!saved.bcv && !saved.usdt) return null;
   if (!Number.isFinite(saved.fetchedAt)) saved.fetchedAt = 0;
   store.write(RATES_KEY, saved);
   return saved;
@@ -86,8 +90,9 @@ function migrateLegacyRates() {
 function loadSaved() {
   const saved = store.read(RATES_KEY) || migrateLegacyRates();
   if (saved) {
+    saved.usdt ??= saved.p2p; // stored as "p2p" before the USDT rename
     for (const key of RATE_KEYS) {
-      const rate = Number(saved[key]?.rate);
+      const rate = roundRate(Number(saved[key]?.rate));
       if (isValidRate(rate)) {
         state.api[key] = { rate, date: saved[key].date ?? null };
         state.rates[key] = rate;
@@ -97,6 +102,7 @@ function loadSaved() {
   }
 
   const amount = store.read(AMOUNT_KEY);
+  if (amount?.anchor === "p2p") amount.anchor = "usdt";
   if (amount && AMOUNT_KEYS.includes(amount.anchor) && Number.isFinite(amount.value)) {
     state.anchor = amount.anchor;
     state.anchorValue = amount.value;
@@ -104,7 +110,7 @@ function loadSaved() {
   }
 }
 
-const saveRates = () => store.write(RATES_KEY, { bcv: state.api.bcv, p2p: state.api.p2p, fetchedAt: state.fetchedAt });
+const saveRates = () => store.write(RATES_KEY, { bcv: state.api.bcv, usdt: state.api.usdt, fetchedAt: state.fetchedAt });
 
 let saveAmountTimer;
 function saveAmountSoon() {
@@ -135,7 +141,7 @@ async function fetchRates(force) {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const parsed = parseRatesResponse(await response.json());
-  if (!parsed.bcv && !parsed.p2p) throw new Error("La respuesta no trae tasas");
+  if (!parsed.bcv && !parsed.usdt) throw new Error("Response has no rates");
   return parsed;
 }
 
@@ -212,6 +218,7 @@ function commit(field) {
 }
 
 function activate(field) {
+  if (isRateField(field)) dismissHint();
   if (state.active !== field) {
     const previous = state.active;
     // A rate left empty goes back to the day's rate.
@@ -270,33 +277,38 @@ function renderRates() {
     const field = `rate:${key}`;
     const node = ui.fields[field];
     const active = state.active === field;
-    const text = active && state.entry !== null ? formatEntry(state.entry) : formatNumber(state.rates[key], 2, 4);
+    const text = active && state.entry !== null ? formatEntry(state.entry) : formatNumber(state.rates[key]);
+    const manual = state.manual[key];
 
     node.classList.toggle("is-active", active);
     node.classList.toggle("is-fresh", active && state.entry === null);
-    node.classList.toggle("is-manual", state.manual[key]);
+    node.classList.toggle("is-manual", manual);
     node.querySelector(".value").textContent = text;
 
     const main = node.querySelector(".rate__main");
-    main.setAttribute("aria-label", `${LABELS[field]}: ${text ? `${text} bolívares por dólar` : "sin tasa"}`);
+    const mode = manual ? "manual" : "automática";
+    main.setAttribute("aria-label", `${LABELS[field]}, ${mode}: ${text ? `${text} bolívares por dólar` : "sin tasa"}. Toca para editar`);
     main.toggleAttribute("aria-current", active);
 
-    node.querySelector(".rate__reset").hidden = !(state.manual[key] && state.api[key]);
+    node.querySelector(".rate__reset").hidden = !(manual && state.api[key]);
 
-    let meta;
-    if (state.manual[key]) meta = "Manual";
+    // The chip states where the rate comes from, which also signals it can be changed.
+    let chip;
+    if (manual) chip = "Manual";
+    else if (active) chip = "Escribe tu tasa";
     else if (state.api[key]) {
       const when = describeDate(state.api[key].date).replace(/^hoy (?=\d)/, "");
-      meta = when ? `${SOURCE[key]} · ${when}` : SOURCE[key];
-    } else meta = state.sync === "error" ? "Toca para escribirla" : "Cargando…";
-    node.querySelector(".rate__meta").textContent = meta;
+      chip = when ? `Automática · ${when}` : "Automática";
+    } else chip = state.sync === "error" ? "Escríbela" : "Cargando…";
+    node.querySelector(".chip").textContent = chip;
   }
 
   const gap = computeGap(state.rates);
   ui.gap.hidden = !Number.isFinite(gap);
   if (Number.isFinite(gap)) {
-    ui.gap.textContent = `${gap >= 0 ? "+" : "−"}${formatNumber(Math.abs(gap), 1, 1)}%`;
-    ui.gap.title = `P2P ${formatNumber(Math.abs(gap), 1, 1)}% ${gap >= 0 ? "sobre" : "bajo"} el BCV`;
+    const pct = formatNumber(Math.abs(gap), 1, 1);
+    ui.gap.textContent = `Brecha ${gap >= 0 ? "+" : "−"}${pct}%`;
+    ui.gap.title = `USDT ${pct}% ${gap >= 0 ? "sobre" : "bajo"} el BCV`;
   }
 }
 
@@ -346,7 +358,7 @@ function announceSoon() {
   announceTimer = setTimeout(() => {
     const v = currentValues();
     ui.sr.textContent = Number.isFinite(v.bs)
-      ? `${formatNumber(v.bs)} bolívares equivalen a ${formatNumber(v.bcv) || "—"} dólares BCV y ${formatNumber(v.p2p) || "—"} dólares P2P`
+      ? `${formatNumber(v.bs)} bolívares equivalen a ${formatNumber(v.bcv) || "—"} dólares BCV y ${formatNumber(v.usdt) || "—"} USDT`
       : "";
   }, 800);
 }
@@ -389,7 +401,7 @@ document.addEventListener("click", (e) => {
   if (reset) {
     resetRate(reset.dataset.reset);
     render();
-    toast(`Tasa ${reset.dataset.reset === "bcv" ? "BCV" : "P2P"} del día`);
+    toast(`Tasa ${RATE_NAMES[reset.dataset.reset]} automática`);
   }
 });
 
@@ -513,11 +525,34 @@ setInterval(() => {
   if (document.visibilityState === "visible") refreshIfOlderThan(POLL_EVERY_MS);
 }, 30 * 1000);
 
+// ------------------------------------------------------------------ one-time hint
+
+// Shown once, pointing at the rates, so people discover they can type their own.
+function showHintOnce() {
+  if (store.read(HINT_KEY)) return;
+  setTimeout(() => {
+    if (store.read(HINT_KEY)) return;
+    ui.hint.hidden = false;
+    requestAnimationFrame(() => ui.hint.classList.add("is-visible"));
+    setTimeout(dismissHint, 12000);
+  }, 900);
+}
+
+function dismissHint() {
+  store.write(HINT_KEY, true);
+  if (ui.hint.hidden) return;
+  ui.hint.classList.remove("is-visible");
+  setTimeout(() => { ui.hint.hidden = true; }, 200);
+}
+
+ui.hint.addEventListener("click", dismissHint);
+
 // ------------------------------------------------------------------ start
 
 loadSaved();
 render();
 loadRates();
+showHintOnce();
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

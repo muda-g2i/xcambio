@@ -4,17 +4,27 @@
 export const LOCALE = "es-VE";
 export const TIME_ZONE = "America/Caracas";
 
-/** Amount fields: bolívares, dollars at the BCV rate, dollars at the P2P rate. */
-export const AMOUNT_KEYS = ["bs", "bcv", "p2p"];
-/** Rate keys match the dollar field they convert. */
-export const RATE_KEYS = ["bcv", "p2p"];
+/**
+ * Amount fields: bolívares, dollars at the official BCV rate, and USDT.
+ * "usdt" is the market rate that dolarapi.com calls "paralelo"; the UI calls it
+ * USDT because that is the reference people use (the P2P USDT market).
+ */
+export const AMOUNT_KEYS = ["bs", "bcv", "usdt"];
+/** Rate keys match the amount field they convert. */
+export const RATE_KEYS = ["bcv", "usdt"];
 
 export const LIMITS = {
   amount: { maxInt: 12, maxDecimals: 2 },
-  rate: { maxInt: 7, maxDecimals: 4 }
+  rate: { maxInt: 7, maxDecimals: 2 }
 };
 
 export const isValidRate = (r) => Number.isFinite(r) && r > 0;
+
+/**
+ * Rates are used with two decimals everywhere (display, maths, sharing), so a
+ * hand check of what is on screen always matches: 100 × 917,78 = 91.778,00.
+ */
+export const roundRate = (r) => Math.round(r * 100) / 100;
 
 /**
  * Parse a typed or pasted number. Accepts "1234,56", "1234.56", "1.234,56"
@@ -109,7 +119,7 @@ export function entryFromNumber(n, maxDecimals = 2) {
  * missing comes back as NaN instead of a wrong number.
  */
 export function convertAll(anchor, value, rates) {
-  const out = { bs: NaN, bcv: NaN, p2p: NaN };
+  const out = { bs: NaN, bcv: NaN, usdt: NaN };
   if (!Number.isFinite(value) || value < 0) return out;
 
   out[anchor] = value;
@@ -126,10 +136,10 @@ export function convertAll(anchor, value, rates) {
   return out;
 }
 
-/** Percentage the P2P rate sits above (positive) or below the BCV rate. */
+/** Percentage the USDT rate sits above (positive) or below the BCV rate. */
 export function computeGap(rates) {
-  if (!isValidRate(rates.bcv) || !isValidRate(rates.p2p)) return NaN;
-  return ((rates.p2p - rates.bcv) / rates.bcv) * 100;
+  if (!isValidRate(rates.bcv) || !isValidRate(rates.usdt)) return NaN;
+  return ((rates.usdt - rates.bcv) / rates.bcv) * 100;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,16 +156,16 @@ function readRate(item) {
 
 /**
  * Parse the /v1/dolares response (an array with "oficial" and "paralelo").
- * Returns { bcv, p2p }, each { rate, date } or null when missing.
+ * Returns { bcv, usdt }, each { rate, date } (rate rounded to 2 decimals) or null.
  */
 export function parseRatesResponse(data) {
-  const out = { bcv: null, p2p: null };
+  const out = { bcv: null, usdt: null };
   if (!Array.isArray(data)) return out;
-  const map = { oficial: "bcv", paralelo: "p2p" };
+  const map = { oficial: "bcv", paralelo: "usdt" };
   for (const item of data) {
     const key = map[item?.fuente];
     if (!key || (item.moneda && item.moneda !== "USD")) continue;
-    const rate = readRate(item);
+    const rate = roundRate(readRate(item));
     if (isValidRate(rate)) out[key] = { rate, date: item.fechaActualizacion || null };
   }
   return out;
@@ -167,7 +177,7 @@ export function parseRatesResponse(data) {
 
 const dayKey = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: TIME_ZONE }).format(d);
 
-/** "hoy", "hoy 10:01 a. m." or "18 nov." for a rate's timestamp, in Venezuelan time. */
+/** Spanish label for a rate's timestamp in Venezuelan time: "hoy", "hoy 10:01 a. m." or "18 nov.". */
 export function describeDate(dateStr, now = new Date()) {
   const d = new Date(dateStr);
   if (!dateStr || Number.isNaN(d.getTime())) return "";
@@ -179,7 +189,7 @@ export function describeDate(dateStr, now = new Date()) {
   return new Intl.DateTimeFormat(LOCALE, { timeZone: TIME_ZONE, day: "numeric", month: "short" }).format(d);
 }
 
-/** "hace un momento", "hace 5 minutos", "hace 2 horas", "ayer"… */
+/** Spanish relative time: "hace un momento", "hace 5 minutos", "hace 2 horas", "ayer"… */
 export function timeAgo(timestamp, now = Date.now()) {
   const seconds = Math.max(0, (now - timestamp) / 1000);
   if (!Number.isFinite(seconds)) return "";
@@ -196,12 +206,12 @@ export function timeAgo(timestamp, now = Date.now()) {
 
 /** Plain-text summary of the current conversion, for sharing or copying. */
 export function shareText(values, rates) {
-  const rate = (key) => (isValidRate(rates[key]) ? formatNumber(rates[key], 2, 2) : "—");
+  const rate = (key) => (isValidRate(rates[key]) ? formatNumber(rates[key]) : "—");
   if (!Number.isFinite(values.bs)) {
-    return `Tasa BCV: Bs ${rate("bcv")}\nTasa P2P: Bs ${rate("p2p")}`;
+    return `Tasa BCV: Bs ${rate("bcv")}\nTasa USDT: Bs ${rate("usdt")}`;
   }
   const lines = [`Bs ${formatNumber(values.bs)}`];
   if (Number.isFinite(values.bcv)) lines.push(`$${formatNumber(values.bcv)} a tasa BCV (${rate("bcv")})`);
-  if (Number.isFinite(values.p2p)) lines.push(`$${formatNumber(values.p2p)} a tasa P2P (${rate("p2p")})`);
+  if (Number.isFinite(values.usdt)) lines.push(`${formatNumber(values.usdt)} USDT (tasa ${rate("usdt")})`);
   return lines.join("\n");
 }

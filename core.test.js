@@ -3,10 +3,10 @@ import assert from "node:assert/strict";
 
 import {
   parseAmount, formatNumber, applyKey, formatEntry, entryFromNumber, convertAll,
-  computeGap, parseRatesResponse, describeDate, timeAgo, shareText, LIMITS
+  computeGap, parseRatesResponse, roundRate, describeDate, timeAgo, shareText, LIMITS
 } from "./core.js";
 
-const rates = { bcv: 500, p2p: 625 };
+const rates = { bcv: 500, usdt: 625 };
 
 test("parseAmount accepts comma or dot decimals and thousands separators", () => {
   assert.equal(parseAmount("1234,56"), 1234.56);
@@ -23,8 +23,7 @@ test("parseAmount accepts comma or dot decimals and thousands separators", () =>
 
 test("formatNumber uses Venezuelan formatting and round-trips", () => {
   assert.equal(formatNumber(1072.268), "1.072,27");
-  assert.equal(formatNumber(917.7751, 2, 4), "917,7751");
-  assert.equal(formatNumber(1234.5, 0, 4, false), "1234,5");
+  assert.equal(formatNumber(1234.5, 0, 2, false), "1234,5");
   assert.equal(formatNumber(NaN), "");
   assert.equal(parseAmount(formatNumber(1234567.89)), 1234567.89);
 });
@@ -36,10 +35,17 @@ test("applyKey builds an entry like a calculator", () => {
   assert.equal(type(["0", "0", "7"]), "7");
   assert.equal(type(["1", ",", ",", "2"]), "1,2");
   assert.equal(type(["1", ",", "2", "3", "4"]), "1,23");
-  assert.equal(type(["1", ",", "2", "3", "4", "5"], LIMITS.rate), "1,2345");
   assert.equal(type(["9", "8", "back"]), "9");
   assert.equal(type(["9", "8", "clear"]), "");
   assert.equal(type(Array(20).fill("9")).length, LIMITS.amount.maxInt);
+});
+
+test("rates are typed and used with two decimals", () => {
+  const type = (keys) => keys.reduce((e, k) => applyKey(e, k, LIMITS.rate), "");
+  assert.equal(type(["9", "1", "7", ",", "7", "7", "5", "1"]), "917,77");
+  assert.equal(roundRate(917.7751), 917.78);
+  assert.equal(roundRate(1072.268492), 1072.27);
+  assert.equal(roundRate(36.005), 36.01);
 });
 
 test("formatEntry groups the integer part and keeps typed decimals", () => {
@@ -51,45 +57,45 @@ test("formatEntry groups the integer part and keeps typed decimals", () => {
 });
 
 test("convertAll from bolívares fills both dollar amounts", () => {
-  assert.deepEqual(convertAll("bs", 1000, rates), { bs: 1000, bcv: 2, p2p: 1.6 });
+  assert.deepEqual(convertAll("bs", 1000, rates), { bs: 1000, bcv: 2, usdt: 1.6 });
 });
 
-test("convertAll keeps the typed dollar amount exactly", () => {
-  assert.deepEqual(convertAll("p2p", 100, rates), { bs: 62500, bcv: 125, p2p: 100 });
-  assert.deepEqual(convertAll("bcv", 10, rates), { bs: 5000, bcv: 10, p2p: 8 });
+test("convertAll keeps the typed amount exactly", () => {
+  assert.deepEqual(convertAll("usdt", 100, rates), { bs: 62500, bcv: 125, usdt: 100 });
+  assert.deepEqual(convertAll("bcv", 10, rates), { bs: 5000, bcv: 10, usdt: 8 });
 });
 
 test("changing a rate only changes the derived amounts, never the typed one", () => {
-  const after = convertAll("p2p", 100, { ...rates, p2p: 700 });
-  assert.equal(after.p2p, 100);
+  const after = convertAll("usdt", 100, { ...rates, usdt: 700 });
+  assert.equal(after.usdt, 100);
   assert.equal(after.bs, 70000);
   assert.equal(after.bcv, 140);
 });
 
 test("convertAll leaves a field empty when its rate is missing", () => {
-  const r = convertAll("bs", 1000, { bcv: 500, p2p: NaN });
+  const r = convertAll("bs", 1000, { bcv: 500, usdt: NaN });
   assert.equal(r.bcv, 2);
-  assert.ok(Number.isNaN(r.p2p));
+  assert.ok(Number.isNaN(r.usdt));
   assert.ok(Object.values(convertAll("bs", NaN, rates)).every(Number.isNaN));
 });
 
-test("computeGap returns the P2P premium over BCV", () => {
+test("computeGap returns the USDT premium over BCV", () => {
   assert.equal(computeGap(rates), 25);
-  assert.equal(computeGap({ bcv: 500, p2p: 450 }), -10);
-  assert.ok(Number.isNaN(computeGap({ bcv: 0, p2p: 450 })));
+  assert.equal(computeGap({ bcv: 500, usdt: 450 }), -10);
+  assert.ok(Number.isNaN(computeGap({ bcv: 0, usdt: 450 })));
 });
 
-test("parseRatesResponse reads both rates from one /v1/dolares response", () => {
+test("parseRatesResponse reads both rates from one /v1/dolares response, rounded", () => {
   const response = [
     { moneda: "USD", fuente: "oficial", compra: null, venta: null, promedio: 917.7751, fechaActualizacion: "2026-11-19T00:00:00-04:00" },
     { moneda: "USD", fuente: "paralelo", compra: null, venta: null, promedio: 1072.268492, fechaActualizacion: "2026-11-19T14:01:01.179Z" }
   ];
   assert.deepEqual(parseRatesResponse(response), {
-    bcv: { rate: 917.7751, date: "2026-11-19T00:00:00-04:00" },
-    p2p: { rate: 1072.268492, date: "2026-11-19T14:01:01.179Z" }
+    bcv: { rate: 917.78, date: "2026-11-19T00:00:00-04:00" },
+    usdt: { rate: 1072.27, date: "2026-11-19T14:01:01.179Z" }
   });
-  assert.deepEqual(parseRatesResponse([{ fuente: "oficial", promedio: null }]), { bcv: null, p2p: null });
-  assert.deepEqual(parseRatesResponse({ error: "x" }), { bcv: null, p2p: null });
+  assert.deepEqual(parseRatesResponse([{ fuente: "oficial", promedio: null }]), { bcv: null, usdt: null });
+  assert.deepEqual(parseRatesResponse({ error: "x" }), { bcv: null, usdt: null });
 });
 
 test("describeDate and timeAgo", () => {
@@ -108,8 +114,8 @@ test("describeDate and timeAgo", () => {
 
 test("shareText summarises the conversion", () => {
   assert.equal(
-    shareText(convertAll("p2p", 100, rates), rates),
-    "Bs 62.500,00\n$125,00 a tasa BCV (500,00)\n$100,00 a tasa P2P (625,00)"
+    shareText(convertAll("usdt", 100, rates), rates),
+    "Bs 62.500,00\n$125,00 a tasa BCV (500,00)\n100,00 USDT (tasa 625,00)"
   );
-  assert.equal(shareText(convertAll("bs", NaN, rates), rates), "Tasa BCV: Bs 500,00\nTasa P2P: Bs 625,00");
+  assert.equal(shareText(convertAll("bs", NaN, rates), rates), "Tasa BCV: Bs 500,00\nTasa USDT: Bs 625,00");
 });
