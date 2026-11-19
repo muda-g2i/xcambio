@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "CambioX — Bolívares ⇄ USD",
+  "name": "CambioX",
   "short_name": "CambioX",
-  "description": "Calculadora rápida de bolívares y USD con tasa BCV y P2P.",
+  "description": "Convierte bolívares y dólares al instante con la tasa BCV y la tasa P2P. Funciona sin conexión.",
   "lang": "es",
   "dir": "ltr",
   "start_url": "./",
@@ -11,7 +11,10 @@
   "orientation": "portrait",
   "background_color": "#ECEFE7",
   "theme_color": "#145C43",
-  "categories": ["finance", "utilities"],
+  "categories": [
+    "finance",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "icon-192.png",
@@ -36,6 +39,18 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "display_override": [
+    "standalone"
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/narrow.webp",
+      "sizes": "780x1688",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Convierte bolívares a dólares BCV y P2P"
     }
   ]
 }

@@ -1,0 +1,9 @@
+{
+  "name": "cambiox",
+  "private": true,
+  "description": "CambioX: bolívares ⇄ dólares con tasa BCV y P2P. Static PWA, no build step.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test core.test.js"
+  }
+}

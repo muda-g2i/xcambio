@@ -9,9 +9,10 @@ const APP_SHELL = [
   './',
   'index.html',
   'style.css',
+  'core.js',
   'app.js',
   'manifest.json',
-  'icon.svg',
+  'favicon.svg',
   'icon-192.png',
   'apple-touch-icon.png',
   'fonts/space-grotesk-latin-wght-normal.woff2',
@@ -40,7 +41,10 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
-  // Rates come from dolarapi.com; the app caches those itself in localStorage.
+  // Rates (ve.dolarapi.com) are not handled here on purpose: the page shows the
+  // last saved rates instantly from localStorage and revalidates them over the
+  // network with the browser's HTTP cache (ETag → 304), so the service worker
+  // never serves an outdated rate and the refresh button always reaches the API.
   if (url.origin !== self.location.origin) return;
 
   // Cache first: launching the installed app never waits on the network.
