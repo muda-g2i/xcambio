@@ -337,7 +337,7 @@ a { color: inherit; }
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
   padding: 9px 10px 10px 12px;
   border-radius: var(--radius-md);
@@ -451,7 +451,8 @@ a { color: inherit; }
   text-overflow: ellipsis;
 }
 
-.rate.is-active .chip { color: var(--brand-strong); background: var(--brand-soft); }
+/* While editing, the chip is a plain text prompt so it can't merge with the selected value above it. */
+.rate.is-active .chip { color: var(--brand-strong); background: none; padding-inline: 0; }
 .rate.is-manual .chip { color: var(--surface); background: var(--ink); }
 
 /* one-time hint */
@@ -651,6 +652,10 @@ a { color: inherit; }
   box-shadow: 0 0 0 3px var(--select);
 }
 
+/* On rate cards the highlight only grows sideways, so it never reaches the chip below. */
+.rate .value { padding: 0 3px; margin: 0 -3px; }
+.rate.is-active.is-fresh .value:not(:empty) { box-shadow: none; }
+
 .caret {
   display: none;
   width: 2.5px;
@@ -756,10 +761,10 @@ a { color: inherit; }
   .hero__bar { min-height: 40px; }
   .brand { font-size: 19px; }
   .brand__mark { width: 26px; height: 26px; }
-  .status { margin: 0 0 4px; font-size: 12px; }
-  .rates-head { margin-bottom: 5px; }
+  .status { margin: 0 0 3px; font-size: 12px; }
+  .rates-head { margin-bottom: 4px; }
   .rates { gap: 8px; }
-  .rate { padding: 5px 8px 6px 10px; gap: 1px; }
+  .rate { padding: 4px 8px 5px 10px; gap: 3px; }
   .rate__top { min-height: 20px; }
   .rate__edit, .rate__reset { width: 22px; height: 22px; }
   .rate__main { font-size: 18px; }
