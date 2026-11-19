@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 
 import {
   parseAmount, formatNumber, applyKey, formatEntry, entryFromNumber, convertAll,
-  computeGap, parseRatesResponse, roundRate, describeDate, timeAgo, shareText, LIMITS
+  computeGap, parseRatesResponse, roundRate, describeDate, timeAgo, shareText, LIMITS,
+  resolveTheme, nextTheme
 } from "./core.js";
 
 const rates = { bcv: 500, usdt: 625 };
@@ -118,4 +119,23 @@ test("shareText summarises the conversion", () => {
     "Bs 62.500,00\n$125,00 a tasa BCV (500,00)\n100,00 USDT (tasa 625,00)"
   );
   assert.equal(shareText(convertAll("bs", NaN, rates), rates), "Tasa BCV: Bs 500,00\nTasa USDT: Bs 625,00");
+});
+
+test("theme: auto follows the system, light/dark override it", () => {
+  assert.equal(resolveTheme("auto", true), "dark");
+  assert.equal(resolveTheme("auto", false), "light");
+  assert.equal(resolveTheme("light", true), "light");
+  assert.equal(resolveTheme("dark", false), "dark");
+});
+
+test("theme button: first tap always changes what you see, then back to auto", () => {
+  // System in dark mode: auto(dark) → light → dark → auto
+  assert.equal(nextTheme("auto", true), "light");
+  assert.equal(nextTheme("light", true), "dark");
+  assert.equal(nextTheme("dark", true), "auto");
+  // System in light mode: auto(light) → dark → light → auto
+  assert.equal(nextTheme("auto", false), "dark");
+  assert.equal(nextTheme("dark", false), "light");
+  assert.equal(nextTheme("light", false), "auto");
+  assert.equal(nextTheme("garbage", false), "dark");
 });

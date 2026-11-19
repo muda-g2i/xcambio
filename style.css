@@ -19,7 +19,7 @@
    BCV is marked in blue; USDT uses the Tether mark (its own teal, #26A17B). */
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   --bg: #EDF5F0;
   --surface: #FFFFFF;
@@ -69,38 +69,39 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #07120E;
-    --surface: #0F1C17;
-    --surface-2: #16271F;
-    --ink: #E6F0EA;
-    --muted: #93A59B;
-    --placeholder: #3E5047;
-    --line: #1F3229;
+/* Dark theme: data-theme is set on <html> by the inline script in index.html
+   (system setting, or the user's choice from the theme button). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #07120E;
+  --surface: #0F1C17;
+  --surface-2: #16271F;
+  --ink: #E6F0EA;
+  --muted: #93A59B;
+  --placeholder: #3E5047;
+  --line: #1F3229;
 
-    --brand: #34D399;
-    --brand-strong: #6EE7B7;
-    --brand-soft: #123528;
-    --select: rgba(52, 211, 153, 0.22);
+  --brand: #34D399;
+  --brand-strong: #6EE7B7;
+  --brand-soft: #123528;
+  --select: rgba(52, 211, 153, 0.22);
 
-    --bcv: #8DB2FF;
-    --bcv-soft: #16223F;
+  --bcv: #8DB2FF;
+  --bcv-soft: #16223F;
 
-    --hero-top: #065F46;
-    --hero-bottom: #053D2F;
+  --hero-top: #065F46;
+  --hero-bottom: #053D2F;
 
-    --key: #12211B;
-    --key-alt: #143A2C;
-    --key-alt-ink: #6EE7B7;
-    --key-press: #1C4A39;
+  --key: #12211B;
+  --key-alt: #143A2C;
+  --key-alt-ink: #6EE7B7;
+  --key-press: #1C4A39;
 
-    --coach-bg: #E6F0EA;
-    --coach-ink: #0F1D17;
+  --coach-bg: #E6F0EA;
+  --coach-ink: #0F1D17;
 
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
-  }
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 /* ------------------------------------------------------------------ base */
@@ -577,9 +578,7 @@ a { color: inherit; }
 .amount.is-active .badge--bcv { background: var(--bcv); }
 .amount.is-active .badge--usdt { background: none; }
 
-@media (prefers-color-scheme: dark) {
-  .amount.is-active .badge { color: var(--surface); }
-}
+[data-theme="dark"] .amount.is-active .badge { color: var(--surface); }
 
 .amount__text {
   display: flex;
@@ -781,6 +780,11 @@ a { color: inherit; }
 }
 
 @media (max-width: 360px) {
+  /* Room for up to four header buttons (install, theme, share, refresh). */
+  .brand { gap: 8px; font-size: 19px; }
+  .brand__mark { width: 26px; height: 26px; }
+  .hero__actions { gap: 0; }
+  .icon-btn { width: 40px; }
   .rate__main { font-size: 19px; }
   .amount__value { font-size: 26px; }
   .amount__value[data-len="long"] { font-size: 22px; }

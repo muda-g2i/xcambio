@@ -2,7 +2,7 @@
 import {
   AMOUNT_KEYS, RATE_KEYS, LIMITS, isValidRate, parseAmount, formatNumber, applyKey,
   formatEntry, entryFromNumber, convertAll, computeGap, parseRatesResponse,
-  describeDate, timeAgo, shareText, roundRate
+  describeDate, timeAgo, shareText, roundRate, resolveTheme, nextTheme
 } from "./core.js";
 
 // One request returns both rates (BCV "oficial" and "paralelo").
@@ -10,6 +10,7 @@ const RATES_URL = "https://ve.dolarapi.com/v1/dolares";
 const RATES_KEY = "cambiox:rates";
 const AMOUNT_KEY = "cambiox:amount";
 const HINT_KEY = "cambiox:hint-rates-seen";
+const THEME_KEY = "cambiox:theme"; // "light" | "dark"; absent = auto (read early by the inline script in index.html)
 // Keys used by the first version of the app (migrated once, then removed).
 const LEGACY_KEYS = { bcv: "cambio-ve:bcv-rate", usdt: "cambio-ve:parallel-rate" };
 
@@ -21,6 +22,9 @@ const STALE_AFTER_MS = 6 * 60 * 60 * 1000;
 // User-facing copy is Spanish.
 const LABELS = { bs: "Bolívares", bcv: "Dólares BCV", usdt: "USDT", "rate:bcv": "Tasa BCV", "rate:usdt": "Tasa USDT" };
 const RATE_NAMES = { bcv: "BCV", usdt: "USDT" };
+const THEME_NAMES = { auto: "automático", light: "claro", dark: "oscuro" };
+const THEME_ICONS = { auto: "#i-theme-auto", light: "#i-sun", dark: "#i-moon" };
+const THEME_COLORS = { light: "#047857", dark: "#065F46" }; // header top colour, for the browser/status bar
 const FIELD_ORDER = ["rate:bcv", "rate:usdt", "bs", "bcv", "usdt"];
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -31,6 +35,7 @@ const ui = {
   statusText: $("#status-text"),
   refresh: $("#refresh-btn"),
   share: $("#share-btn"),
+  theme: $("#theme-btn"),
   install: $("#install-btn"),
   gap: $("#gap"),
   hint: $("#rate-hint"),
@@ -525,6 +530,34 @@ setInterval(() => {
   if (document.visibilityState === "visible") refreshIfOlderThan(POLL_EVERY_MS);
 }, 30 * 1000);
 
+// ------------------------------------------------------------------ theme
+
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+function themePref() {
+  const pref = store.read(THEME_KEY);
+  return pref === "light" || pref === "dark" ? pref : "auto";
+}
+
+function applyTheme(pref) {
+  const theme = resolveTheme(pref, systemDark.matches);
+  document.documentElement.dataset.theme = theme;
+  $$('meta[name="theme-color"]').forEach((meta) => meta.setAttribute("content", THEME_COLORS[theme]));
+  setIcon(ui.theme, THEME_ICONS[pref]);
+  ui.theme.setAttribute("aria-label", `Tema: ${THEME_NAMES[pref]}. Cambiar tema`);
+  ui.theme.title = `Tema ${THEME_NAMES[pref]}`;
+}
+
+ui.theme.addEventListener("click", () => {
+  const pref = nextTheme(themePref(), systemDark.matches);
+  store.write(THEME_KEY, pref === "auto" ? null : pref);
+  applyTheme(pref);
+  toast(pref === "auto" ? "Tema automático (como tu teléfono)" : `Tema ${THEME_NAMES[pref]}`);
+});
+
+// Follow the system while on "auto" (e.g. the phone switches to dark at night).
+systemDark.addEventListener?.("change", () => applyTheme(themePref()));
+
 // ------------------------------------------------------------------ one-time hint
 
 // Shown once, pointing at the rates, so people discover they can type their own.
@@ -549,6 +582,7 @@ ui.hint.addEventListener("click", dismissHint);
 
 // ------------------------------------------------------------------ start
 
+applyTheme(themePref());
 loadSaved();
 render();
 loadRates();

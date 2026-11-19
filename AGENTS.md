@@ -81,6 +81,7 @@ caching, and how to run, test and deploy it. This file covers the rules and cont
 | `cambiox:rates` | `{ bcv: {rate, date}, usdt: {rate, date}, fetchedAt }` |
 | `cambiox:amount` | `{ anchor, value }`, the last typed amount |
 | `cambiox:hint-rates-seen` | `true` once the one-time "tap a rate" hint was dismissed |
+| `cambiox:theme` | `"light"` / `"dark"` when the user overrides the theme; `null` or absent = automatic |
 
 Migrations in `loadSaved()`: the first version's keys `cambio-ve:bcv-rate` / `cambio-ve:parallel-rate`
 (moved, then deleted) and the old `p2p` key (now `usdt`). If you change a stored shape, migrate it there;
@@ -91,8 +92,15 @@ installed users carry old data.
 - Palette A: emerald brand (`--brand #059669`, header `#047857 → #065F46`) on a mint-tinted neutral
   (`--bg #EDF5F0`). **BCV is marked in blue** (`--bcv`: "$" in a blue circle on the rate card, blue badge).
   **USDT uses the Tether mark** (teal `#26A17B` circle with ₮, sprite symbol `#i-tether`) on the rate card
-  and as its amount badge. Every other color is a token in `:root` with a dark-mode override; don't
+  and as its amount badge. Every other color is a token in `:root` with a dark override; don't
   hard-code colors in rules.
+- **Light/dark theme** is driven by `data-theme="light|dark"` on `<html>`, never by
+  `@media (prefers-color-scheme)` in CSS. Dark tokens live in `:root[data-theme="dark"]`; component tweaks
+  use `[data-theme="dark"] .selector`. An inline script in `<head>` sets the attribute (and the
+  `theme-color` metas) before the first paint from `cambiox:theme`, falling back to the system setting.
+  It mirrors `resolveTheme()` in `core.js`; keep the two in sync. The header button cycles
+  automatic → opposite of the system → same as the system → automatic (`nextTheme()`), so the first tap
+  always changes what you see; while automatic, the app follows system changes live.
 - Editable things are boxed (rate cards and amount cards share the same field look). Rate cards show ✎
   when automatic, ↺ when manual, and a chip: "Automática · hoy" / "Manual" / "Escribe tu tasa".
 - The active field gets an emerald ring and a caret; a just-selected value gets a selection highlight.

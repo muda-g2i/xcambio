@@ -15,6 +15,8 @@ hosted on GitHub Pages that works offline once opened. The app's interface is in
 - Tap a rate card to type your own rate ("Manual"); ↺ on the card, or the refresh button, goes back to the
   automatic rate.
 - An on-screen keypad edits whichever field is selected; on desktop you can type, paste and use the arrow keys.
+- Light and dark themes follow the phone's setting; the theme button in the header overrides it
+  (automatic → light/dark → automatic).
 
 ## Caching
 

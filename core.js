@@ -201,6 +201,29 @@ export function timeAgo(timestamp, now = Date.now()) {
 }
 
 // ---------------------------------------------------------------------------
+// Theme: "auto" follows the system, "light" / "dark" override it.
+// ---------------------------------------------------------------------------
+
+export const THEMES = ["auto", "light", "dark"];
+
+/** The theme actually shown ("light" | "dark") for a preference. */
+export function resolveTheme(pref, systemDark) {
+  if (pref === "light" || pref === "dark") return pref;
+  return systemDark ? "dark" : "light";
+}
+
+/**
+ * Next preference for the theme button. From "auto" it first goes to the
+ * opposite of the system theme, so the first tap always changes something:
+ * auto → opposite → same as system → auto.
+ */
+export function nextTheme(pref, systemDark) {
+  const order = systemDark ? ["auto", "light", "dark"] : ["auto", "dark", "light"];
+  const i = Math.max(0, order.indexOf(pref)); // unknown values count as "auto"
+  return order[(i + 1) % order.length];
+}
+
+// ---------------------------------------------------------------------------
 // Sharing
 // ---------------------------------------------------------------------------
 
