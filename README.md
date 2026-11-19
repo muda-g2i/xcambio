@@ -16,6 +16,7 @@ hosted on GitHub Pages that works offline once opened. The app's interface is in
 - The rates and the gap between them (brecha) are shown as a reference strip in the header. Tap a rate to
   type your own ("Manual ↺"); tapping that pill, or the refresh button, goes back to the automatic rate.
 - An on-screen keypad edits whichever field is selected; on desktop you can type, paste and use the arrow keys.
+  × clears the amount you're typing; the other two amounts have a copy button.
 - Light and dark themes follow the phone's setting; the theme button in the header overrides it
   (automatic → light/dark → automatic).
 

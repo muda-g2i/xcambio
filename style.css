@@ -560,21 +560,22 @@ a { color: inherit; }
 
 .amount.is-active .amount__value { font-weight: 700; }
 
-/* Only the selected row shows its copy button. */
+/* Row button (owner decision): × on the row you're typing in, a muted copy button on the
+   other two rows. Hidden (but keeping its space) while the row is empty. */
 .amount__action {
   position: relative;
   z-index: 1;
-  display: none;
+  display: grid;
   place-items: center;
   width: 44px;
   height: 44px;
   margin-right: 4px;
   border-radius: 999px;
-  color: var(--brand-strong);
+  color: var(--muted);
   flex-shrink: 0;
 }
 
-.amount.is-active .amount__action { display: grid; }
+.amount.is-active .amount__action { color: var(--brand-strong); }
 .amount__action:disabled { visibility: hidden; }
 .amount__action:active { background: var(--select); }
 

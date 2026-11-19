@@ -267,8 +267,14 @@ function renderAmounts(values) {
     main.setAttribute("aria-label", `${LABELS[key]}: ${text || "vacío"}`);
     main.toggleAttribute("aria-current", active);
 
-    // Only the selected row shows its copy button (CSS); it's disabled while empty.
-    node.querySelector(".amount__action").disabled = text === "";
+    // Row button (owner decision, see AGENTS.md): × clears the row you're typing in;
+    // the other two rows (the results) show copy. Hidden while the row is empty.
+    const action = node.querySelector(".amount__action");
+    const clears = active;
+    setIcon(action, clears ? "#i-clear" : "#i-copy");
+    action.dataset.mode = clears ? "clear" : "copy";
+    action.setAttribute("aria-label", `${clears ? "Borrar" : "Copiar"} ${LABELS[key].toLowerCase()}`);
+    action.disabled = text === "";
   }
   fitAmounts();
 }
@@ -406,6 +412,14 @@ document.addEventListener("click", (e) => {
   const action = e.target.closest("[data-action-for]");
   if (action) {
     const key = action.dataset.actionFor;
+    if (action.dataset.mode === "clear") {
+      state.active = key;
+      state.entry = "";
+      commit(key);
+      render();
+      announceSoon();
+      return;
+    }
     const value = currentValues()[key];
     // Copied without thousands separators ("1234,56") so it pastes cleanly into bank apps.
     if (Number.isFinite(value)) copyText(entryFromNumber(value, 2), `Copiado: ${formatNumber(value)}`);

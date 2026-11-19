@@ -14,13 +14,19 @@ caching, and how to run, test and deploy it. This file covers the rules and cont
   toasts, `aria-label`s, manifest `name`/`description`) in Spanish for Venezuela (`es-VE`).
 - **Never rename the repository.** The Pages URL is the installed app's identity; renaming breaks every install.
 - Keep it working offline and on small phones (see Checks).
+- **Don't change user-facing behaviour without the owner's confirmation.** That includes removing, adding,
+  moving or swapping a control, changing what a button or gesture does, renaming things on screen, or
+  breaking a UI criterion. Propose first (a mockup or screenshot plus the reason), get an explicit yes,
+  then implement and add a line to the [Decisions log](#decisions-log). Visual polish that stays within the
+  UI criteria and the [Behaviour contract](#behaviour-contract) doesn't need confirmation. If a redesign
+  would drop or change an item in the Behaviour contract, call that out explicitly when proposing it.
 
 ## Files
 
 | File | Role |
 | --- | --- |
 | `index.html` | Markup only. SVG icon sprite at the top of `<body>`. |
-| `style.css` | All styles. Design tokens in `:root`, dark mode in the `prefers-color-scheme` block. |
+| `style.css` | All styles. Design tokens in `:root`, dark overrides in `:root[data-theme="dark"]`. |
 | `core.js` | Pure logic, no DOM: parsing, formatting, keypad editing, conversion, API parsing, dates. |
 | `app.js` | UI: state, `render()`, events, network, storage, service worker registration. |
 | `sw.js` | Service worker: precaches the app shell, cache-first. |
@@ -110,10 +116,60 @@ the three amounts and the keypad.
 7. **Header buttons stay visible**: install (when the browser offers it), theme, share, refresh. No
    overflow (⋯) menu.
 8. **Amounts are right-aligned** so digits line up by place value (like a calculator or a bank statement).
-9. **One action at a time**: only the selected amount shows its copy button.
+9. **Row buttons match intent**: the row you're typing in shows **×** (clear it); the other two rows, the
+   results, show a muted **copy** button. Hidden while a row is empty. (Owner decision; see the
+   Behaviour contract.)
 10. **Touch targets ≥ 44 px**; keys 64 px tall (52 px min, 48 px on very short screens).
 11. **Dark mode mirrors light mode** exactly; only tokens change.
 12. Everything fits on one screen without scrolling from 320×568 (iPhone SE in Safari) upwards.
+
+## Behaviour contract
+
+What users can do today. Changing or dropping any of these needs the owner's confirmation first
+(see Ground rules).
+
+- **Linked amounts:** Bolívares, Dólares BCV and USDT. The amount you type stays fixed; the other two follow.
+  Changing a rate only updates the two derived amounts.
+- **Selecting and typing:** tap an amount or a rate to select it (the value shows highlighted); the next key
+  replaces it. ⌫ on a selected value clears it; ⌫ while typing deletes one digit; holding ⌫ clears the field.
+  "," adds the decimal mark. Amounts and rates take at most 2 decimals.
+- **Row buttons:** × on the selected amount clears it (and keeps it selected for typing). Copy on the other two
+  amounts copies the number without thousands separators (`107267` or `1234,56`, so it pastes cleanly into
+  bank apps) and shows a "Copiado: …" toast. Buttons are hidden while a row is empty.
+- **Rates:** tap BCV or USDT in the header strip to type your own. A manual rate shows "Manual ↺"; tapping
+  the pill goes back to the automatic rate. Leaving a manual rate empty also restores it. The refresh button
+  reloads both rates and discards manual ones; automatic refreshes keep them. Manual rates are not saved
+  between launches.
+- **Brecha** (USDT vs BCV, in %) is always visible next to the rates.
+- **Header buttons:** install (only when the browser offers it), theme (automatic → opposite of the system →
+  same as the system → automatic), share (system share sheet with the conversion as text; copies it where
+  sharing isn't available), refresh.
+- **Status line:** "Actualizado hace …" (or offline/error state) and a link to dolarapi.com.
+- **One-time hint** "Toca una tasa para usar la tuya", shown once; dismissed by tapping a rate, its ×, or
+  after 12 s.
+- **Remembered:** the last typed amount (restored on the next launch), the theme choice, the last rates.
+- **Desktop:** type digits, "," or ".", Backspace, Delete (clears), arrow keys to move between fields, paste a
+  number.
+- **Names on screen:** CambioX; Bolívares, Dólares BCV, USDT; never "paralelo" or "P2P".
+
+## Decisions log
+
+Owner decisions, newest last. Add a line whenever the owner confirms a user-facing change.
+
+| Date | Decision |
+| --- | --- |
+| 2026-11-19 | Keep it a static GitHub Pages site; no framework needed. Code and docs in English, UI in Spanish. |
+| 2026-11-19 | Rates from dolarapi.com in one call (`/v1/dolares`); the refresh button always forces an up-to-date fetch. |
+| 2026-11-19 | Name **CambioX** everywhere (repo and URL stay `xcambio`). |
+| 2026-11-19 | Market rate labelled **USDT** (not "P2P" or "paralelo"). |
+| 2026-11-19 | Rates rounded to **2 decimals** and used that way for the maths. |
+| 2026-11-19 | Palette A with emerald as the main brand colour. |
+| 2026-11-19 | App icon "Bs ⟳ $" (option 3); browser-tab icon a simple green X; Tether mark for USDT. |
+| 2026-11-19 | One-time hint that rates can be edited. |
+| 2026-11-19 | Light/dark theme button that overrides the system setting. |
+| 2026-11-19 | Layout A: emerald header with a reference strip (BCV · USDT · Brecha), white sheet with the three amounts as the focus, right-aligned numbers, borderless keypad. Header buttons stay visible (no ⋯ menu). Brecha always visible. |
+| 2026-11-19 | Row buttons: × on the selected amount, copy on the other two. (Restored after it was replaced by copy-only without confirmation.) |
+| open | "Rates are reference only" was implemented as *still editable, visually secondary*; the owner hasn't confirmed editable vs read-only. Ask before changing it. |
 
 ## Design implementation
 
